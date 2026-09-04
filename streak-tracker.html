@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Streak</title>
+<style>
+  :root{
+    --bg:#10262b; --panel:#173339; --line:#24484f;
+    --ink:#e7f1ee; --sub:#93b3ae; --moon:#f2d39b; --moon-dim:#8a7346;
+    --ok:#7fd3b0; --warn:#f0a06a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;line-height:1.6;min-height:100vh;padding:24px 20px 48px;max-width:480px;margin:0 auto}
+  h1{font-size:15px;font-weight:500;color:var(--sub);letter-spacing:.06em}
+  .hero{display:flex;flex-direction:column;align-items:center;margin:28px 0 20px}
+  .ring{position:relative;width:240px;height:240px}
+  .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring circle{fill:none;stroke-width:10;stroke-linecap:round}
+  .ring .track{stroke:var(--line)}
+  .ring .bar{stroke:var(--moon);transition:stroke-dashoffset .6s ease}
+  .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .days{font-size:72px;font-weight:200;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .unit{font-size:14px;color:var(--sub);margin-top:6px}
+  .goalline{margin-top:16px;color:var(--sub);font-size:14px}
+  .goalline b{color:var(--moon);font-weight:500}
+  .reminder{border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center;margin-top:20px}
+  .reminder.due{border-color:var(--warn)}
+  .reminder .dot{width:10px;height:10px;border-radius:50%;background:var(--ok);flex:none}
+  .reminder.due .dot{background:var(--warn)}
+  .reminder p{flex:1;font-size:14px}
+  .reminder small{display:block;color:var(--sub);font-size:12px}
+  button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:10px 14px}
+  button:focus-visible{outline:2px solid var(--moon);outline-offset:2px}
+  button.primary{background:var(--moon);color:#2a1f08;border-color:var(--moon);font-weight:600}
+  button.danger{color:var(--warn);border-color:var(--warn);background:transparent}
+  .actions{display:flex;gap:10px;margin-top:22px}
+  .actions button{flex:1;padding:14px}
+  section{margin-top:36px}
+  h2{font-size:14px;font-weight:500;color:var(--sub);margin-bottom:12px}
+  .row{display:flex;align-items:center;gap:10px}
+  input[type=number]{font:inherit;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:10px 12px;width:90px;text-align:center}
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+  .stat{background:var(--panel);border-radius:12px;padding:12px}
+  .stat span{display:block;font-size:12px;color:var(--sub)}
+  .stat strong{font-size:22px;font-weight:400;font-variant-numeric:tabular-nums}
+  .chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding:0 2px;border-bottom:1px solid var(--line)}
+  .chart .b{flex:1;background:var(--moon-dim);border-radius:4px 4px 0 0;position:relative;min-height:3px}
+  .chart .b.now{background:var(--moon)}
+  .chart .b i{position:absolute;top:-18px;left:0;right:0;text-align:center;font-style:normal;font-size:11px;color:var(--sub)}
+  .empty{color:var(--sub);font-size:14px;padding:12px 0}
+  ul{list-style:none}
+  li{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+  li span{color:var(--sub)}
+  .modal{position:fixed;inset:0;background:rgba(5,15,18,.75);display:none;align-items:flex-end;padding:20px}
+  .modal.open{display:flex}
+  .sheet{background:var(--panel);border-radius:18px;padding:22px;width:100%;max-width:440px;margin:0 auto}
+  .sheet p{margin-bottom:16px}
+  .sheet .actions{margin-top:0}
+  @media(prefers-reduced-motion:reduce){.ring .bar{transition:none}}
+</style>
+</head>
+<body>
+<h1>Daily Streak</h1>
+
+<div class="hero">
+  <div class="ring">
+    <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="bar" id="bar" cx="60" cy="60" r="52"/></svg>
+    <div class="center"><div class="days" id="days">0</div><div class="unit">日目</div></div>
+  </div>
+  <div class="goalline" id="goalline"></div>
+</div>
+
+<div class="reminder" id="reminder"><span class="dot"></span><p id="remText"></p><button id="checkBtn">今日のチェック</button></div>
+
+<p id="saveNote" style="display:none;margin-top:16px;font-size:13px;color:var(--warn)">この画面では記録を保存できないよ。ファイルを端末に保存して、ブラウザで開いてね。</p>
+
+<div class="actions">
+  <button class="primary" id="startBtn">記録を始める</button>
+  <button class="danger" id="resetBtn">リセット</button>
+</div>
+
+<section>
+  <h2>目標日数</h2>
+  <div class="row"><input type="number" id="goalInput" min="1" max="999"><span style="color:var(--sub)">日</span><button id="goalSave">保存</button></div>
+</section>
+
+<section>
+  <h2>これまでの記録</h2>
+  <div class="stats">
+    <div class="stat"><span>最長</span><strong id="sBest">0</strong></div>
+    <div class="stat"><span>平均</span><strong id="sAvg">0</strong></div>
+    <div class="stat"><span>回数</span><strong id="sCount">0</strong></div>
+  </div>
+  <div class="chart" id="chart"></div>
+  <ul id="list"></ul>
+</section>
+
+<section>
+  <h2>記録の持ち出し</h2>
+  <p style="color:var(--sub);font-size:13px;margin-bottom:12px">端末を変えるときや、念のための控えに。書き出したファイルは自分の端末にだけ残るよ。</p>
+  <div class="row"><button id="exportBtn">ファイルに書き出す</button><button id="importBtn">読み込む</button></div>
+  <input type="file" id="fileInput" accept="application/json,.json" style="display:none">
+  <p id="ioNote" style="margin-top:10px;font-size:13px;color:var(--ok);display:none"></p>
+</section>
+
+<div class="modal" id="modal"><div class="sheet">
+  <p>ここまでの記録を終了して、0日目からやり直す？<br><small style="color:var(--sub)">これまでの日数は履歴に残るよ。</small></p>
+  <div class="actions"><button id="cancel">やめる</button><button class="danger" id="confirm">リセットする</button></div>
+</div></div>
+
+<script>
+const KEY='streak-v1';
+let S={start:null,goal:30,history:[],lastCheck:null};
+const $=id=>document.getElementById(id);
+const DAY=86400000;
+const dayStr=t=>new Date(t).toLocaleDateString('ja-JP');
+const today=()=>new Date().toDateString();
+const curDays=()=>S.start?Math.floor((Date.now()-S.start)/DAY):0;
+
+let store='none';
+async function load(){
+  let raw=null;
+  try{const r=await window.storage.get(KEY,false);if(r&&r.value){raw=r.value;store='app'}}catch(e){}
+  if(store==='none'){try{await window.storage.set(KEY+':probe','1',false);store='app'}catch(e){}}
+  if(store==='none'){try{localStorage.setItem(KEY+':probe','1');localStorage.removeItem(KEY+':probe');raw=raw||localStorage.getItem(KEY);store='local'}catch(e){}}
+  if(raw){try{S={...S,...JSON.parse(raw)}}catch(e){}}
+  render();
+}
+async function save(){
+  if(store==='app'){try{await window.storage.set(KEY,JSON.stringify(S),false);return}catch(e){store='local'}}
+  if(store==='local'){try{localStorage.setItem(KEY,JSON.stringify(S));return}catch(e){store='none'}}
+  render();
+}
+
+function render(){
+  const d=curDays(),g=S.goal||1,c=2*Math.PI*52;
+  $('days').textContent=d;
+  $('bar').style.strokeDasharray=c;
+  $('bar').style.strokeDashoffset=c*(1-Math.min(d/g,1));
+  $('goalline').innerHTML=S.start?(d>=g?`目標 <b>${g}日</b> 達成中`:`目標 <b>${g}日</b> まであと <b>${g-d}日</b>`):'まだ記録は始まっていないよ';
+  $('goalInput').value=S.goal;
+  $('startBtn').style.display=S.start?'none':'';
+  $('resetBtn').style.display=S.start?'':'none';
+  const rem=$('reminder'),done=S.lastCheck===today();
+  rem.style.display=S.start?'':'none';
+  rem.classList.toggle('due',!done);
+  $('remText').innerHTML=done?'今日のチェックは済んでるよ<small>また明日ね</small>':'今日はまだチェックしてないよ<small>1日1回、続いているか確認しよう</small>';
+  $('checkBtn').style.display=done?'none':'';
+  const h=S.history,best=h.length?Math.max(...h.map(x=>x.days)):0;
+  $('sBest').textContent=Math.max(best,d);
+  $('sAvg').textContent=h.length?Math.round(h.reduce((a,x)=>a+x.days,0)/h.length):d;
+  $('sCount').textContent=h.length+(S.start?1:0);
+  const bars=[...h.slice(-11),...(S.start?[{days:d,now:true}]:[])],mx=Math.max(1,...bars.map(x=>x.days));
+  $('chart').innerHTML=bars.length?bars.map(x=>`<div class="b${x.now?' now':''}" style="height:${x.days/mx*100}%"><i>${x.days}</i></div>`).join(''):'<p class="empty">記録を始めると、ここにグラフが育っていくよ。</p>';
+  $('saveNote').style.display=store==='none'?'':'none';
+  $('list').innerHTML=[...h].reverse().slice(0,10).map(x=>`<li><span>${dayStr(x.start)} 〜 ${dayStr(x.end)}</span><b>${x.days}日</b></li>`).join('');
+}
+
+$('startBtn').onclick=async()=>{S.start=Date.now();S.lastCheck=today();await save();render()};
+$('resetBtn').onclick=()=>$('modal').classList.add('open');
+$('cancel').onclick=()=>$('modal').classList.remove('open');
+$('confirm').onclick=async()=>{S.history.push({start:S.start,end:Date.now(),days:curDays()});S.start=Date.now();S.lastCheck=today();$('modal').classList.remove('open');await save();render()};
+$('goalSave').onclick=async()=>{const v=parseInt($('goalInput').value);if(v>0){S.goal=v;await save();render()}};
+$('checkBtn').onclick=async()=>{S.lastCheck=today();await save();render()};
+function note(t,ok){const n=$('ioNote');n.textContent=t;n.style.color=ok?'var(--ok)':'var(--warn)';n.style.display=''}
+$('exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='streak-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();URL.revokeObjectURL(a.href);
+  note('書き出したよ。ダウンロードフォルダを見てね。',true);
+};
+$('importBtn').onclick=()=>$('fileInput').click();
+$('fileInput').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const o=JSON.parse(await f.text());
+    if(typeof o!=='object'||o===null||!('goal' in o))throw 0;
+    S={start:o.start??null,goal:o.goal??30,history:Array.isArray(o.history)?o.history:[],lastCheck:o.lastCheck??null};
+    await save();render();note('読み込んだよ。',true);
+  }catch(err){note('このファイルは読み込めなかったよ。書き出したJSONファイルを選んでね。',false)}
+  e.target.value='';
+};
+load();
+setInterval(render,60000);
+</script>
+</body>
+</html>
