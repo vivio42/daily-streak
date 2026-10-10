@@ -125,6 +125,98 @@
       color: #020408;
       box-shadow: 0 0 15px #00f3ff;
     }
+    
+/* ===== NEON ALERT ===== */
+.neon-alert {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+
+  width: min(380px, calc(100vw - 48px));
+  padding: 20px;
+  box-sizing: border-box;
+
+  color: #eafcff;
+  background: rgba(3, 12, 27, 0.97);
+  border: 1px solid #00f3ff;
+  border-radius: 8px;
+
+  box-shadow:
+    0 0 10px rgba(0, 243, 255, 0.35),
+    inset 0 0 18px rgba(0, 243, 255, 0.06);
+
+  font-family: monospace;
+  animation: neonAlertIn 0.35s ease-out;
+}
+
+.neon-alert[hidden] {
+  display: none;
+}
+
+.neon-alert-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: #00f3ff;
+  letter-spacing: 3px;
+  font-size: 14px;
+}
+
+.neon-alert-close {
+  padding: 2px 8px;
+  color: #00f3ff;
+  background: transparent;
+  border: 1px solid #00f3ff;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.neon-alert-close:hover {
+  color: #06101d;
+  background: #00f3ff;
+}
+
+.neon-alert-message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.neon-alert-line {
+  height: 1px;
+  margin: 12px 0;
+  background: rgba(0, 243, 255, 0.4);
+}
+
+.neon-alert-status {
+  color: #53ff42;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
+@keyframes neonAlertIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .neon-alert {
+    top: 12px;
+    right: 12px;
+    width: calc(100vw - 24px);
+  }
+}
+
   </style>
 </head>
 <body>
@@ -222,5 +314,131 @@
       updatePomoDisplay();
     }
   </script>
+  
+<!-- NEON NOTIFICATION -->
+<div
+  id="neonAlert"
+  class="neon-alert"
+  role="alert"
+  aria-live="assertive"
+  hidden
+>
+  <div class="neon-alert-header">
+    <span id="neonAlertTitle">SYSTEM ALERT</span>
+    <button
+      type="button"
+      id="neonAlertClose"
+      class="neon-alert-close"
+      aria-label="通知を閉じる"
+    >×</button>
+  </div>
+
+  <div class="neon-alert-line"></div>
+
+  <p id="neonAlertMessage" class="neon-alert-message">
+    通知メッセージ
+  </p>
+
+  <div class="neon-alert-line"></div>
+
+  <div class="neon-alert-status">
+    ● SYSTEM NOTIFICATION
+  </div>
+</div>
+<script>
+  
+/* ===== NEON NOTIFICATION SYSTEM ===== */
+
+function showNeonNotification(
+  message,
+  title = "SYSTEM ALERT"
+) {
+  const alertBox = document.getElementById("neonAlert");
+  const alertTitle = document.getElementById("neonAlertTitle");
+  const alertMessage = document.getElementById("neonAlertMessage");
+
+  if (!alertBox || !alertTitle || !alertMessage) {
+    console.error("Neon notification elements not found.");
+    return;
+  }
+
+  alertTitle.textContent = title;
+  alertMessage.textContent = message;
+
+  // 再表示時にもアニメーションさせる
+  alertBox.hidden = true;
+  void alertBox.offsetWidth;
+  alertBox.hidden = false;
+}
+
+function closeNeonNotification() {
+  const alertBox = document.getElementById("neonAlert");
+
+  if (alertBox) {
+    alertBox.hidden = true;
+  }
+}
+
+// 閉じるボタンを登録
+document
+  .getElementById("neonAlertClose")
+  .addEventListener("click", closeNeonNotification);
+
+// 動作テスト用
+// ブラウザの開発者コンソールから実行できます。
+// showNeonNotification("テスト通知です！", "SYSTEM READY");
+
+</script>
+<script>
+  
+/* ===== NEON NOTIFICATION SYSTEM ===== */
+
+function showNeonNotification(
+  message,
+  title = "SYSTEM ALERT"
+) {
+  const alertBox = document.getElementById("neonAlert");
+  const alertTitle = document.getElementById("neonAlertTitle");
+  const alertMessage = document.getElementById("neonAlertMessage");
+
+  if (!alertBox || !alertTitle || !alertMessage) {
+    console.error("Neon notification elements not found.");
+    return;
+  }
+
+  alertTitle.textContent = title;
+  alertMessage.textContent = message;
+
+  // 再表示時にもアニメーションさせる
+  alertBox.hidden = true;
+  void alertBox.offsetWidth;
+  alertBox.hidden = false;
+}
+
+function closeNeonNotification() {
+  const alertBox = document.getElementById("neonAlert");
+
+  if (alertBox) {
+    alertBox.hidden = true;
+  }
+}
+
+// 閉じるボタンを登録
+document
+  .getElementById("neonAlertClose")
+  .addEventListener("click", closeNeonNotification);
+
+// 動作テスト用
+// ブラウザの開発者コンソールから実行できます。
+// showNeonNotification("テスト通知です！", "SYSTEM READY");
+showNeonNotification(
+  "25分間の集中作業が終了しました。休憩しましょう。",
+  "FOCUS COMPLETE"
+);
+showNeonNotification(
+  "集中作業が終了しました。休憩しましょう。",
+  "FOCUS COMPLETE"
+);
+</script>
 </body>
 </html>
