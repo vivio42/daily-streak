@@ -1,0 +1,226 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Cyber Pomodoro Clock</title>
+  <style>
+    /* 近未来風のフォントや全体のレイアウト */
+    body {
+      /* 背景に画像を使いたい場合は url('bg.jpg') を指定、今回は近未来のダークグラデーション */
+      background: radial-gradient(circle at center, #090d16 0%, #020408 100%);
+      color: #00f3ff;
+      font-family: 'Courier New', Courier, monospace, 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    /* ホログラム・SF端末風のコンテナ */
+    .clock-container {
+      background: rgba(2, 12, 27, 0.85);
+      padding: 40px 60px;
+      border-radius: 4px;
+      box-shadow: 0 0 30px rgba(0, 243, 255, 0.2), inset 0 0 20px rgba(0, 243, 255, 0.1);
+      text-align: center;
+      border: 1px solid #00f3ff;
+      position: relative;
+      backdrop-filter: blur(8px);
+    }
+
+    /* 近未来風のコーナー装飾（四隅のアクセント） */
+    .clock-container::before,
+.clock-container::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: #00f3ff;
+  border-style: solid;
+  
+}
+    .clock-container::before { 
+      top: -2px; 
+      left: -2px;
+       border-width: 2px 0 0 2px; 
+      }
+    .clock-container::after { 
+      bottom: -2px;
+       right: -2px; 
+       border-width: 0 2px 2px 0; 
+      }
+
+    /* 日付・モード表示 */
+    #view_date {
+      font-size: 1.2rem;
+      color: #00f3ff;
+      opacity: 0.7;
+      margin-bottom: 5px;
+      letter-spacing: 0.2em;
+    }
+
+    #mode_label {
+      font-size: 1rem;
+      color: #ff0055;
+      letter-spacing: 0.3em;
+      margin-bottom: 15px;
+      text-shadow: 0 0 8px rgba(255, 0, 85, 0.6);
+      text-transform: uppercase;
+    }
+
+    /* 現在時刻 */
+    #view_time {
+      font-size: 3rem;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      color: #ffffff;
+      text-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff;
+      margin-bottom: 20px;
+      border-bottom: 1px dashed rgba(0, 243, 255, 0.3);
+      padding-bottom: 15px;
+    }
+
+    /* ポモドーロ・タイマー部分 */
+    .pomodoro-section {
+      margin-top: 15px;
+    }
+    .pomo-title {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      letter-spacing: 0.15em;
+      margin-bottom: 5px;
+    }
+    #pomo_timer {
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #39ff14; /* ネオンライムグリーン */
+      text-shadow: 0 0 10px rgba(57, 255, 20, 0.7);
+      letter-spacing: 0.05em;
+      margin-bottom: 15px;
+    }
+
+    /* 操作ボタン群 */
+    .pomo-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .pomo-btn {
+      background: transparent;
+      border: 1px solid #00f3ff;
+      color: #00f3ff;
+      padding: 6px 14px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 5px rgba(0, 243, 255, 0.2);
+    }
+    .pomo-btn:hover {
+      background: #00f3ff;
+      color: #020408;
+      box-shadow: 0 0 15px #00f3ff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="clock-container">
+    <div id="view_date">--年--月--日 (--)</div>
+    <div id="view_time">--:--:--</div>
+    
+    <div class="pomodoro-section">
+      <div id="mode_label">SYSTEM READY</div>
+      <div class="pomo-title">POMODORO TIMER</div>
+      <div id="pomo_timer">25:00</div>
+      <div class="pomo-buttons">
+        <button class="pomo-btn" onclick="startPomodoro()">START</button>
+        <button class="pomo-btn" onclick="pausePomodoro()">PAUSE</button>
+        <button class="pomo-btn" onclick="resetPomodoro()">RESET</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 時計の処理 ---
+    function updateClock() {
+      var now = new Date();
+      var year = now.getFullYear();
+      var mon = String(now.getMonth() + 1).padStart(2, '0');
+      var day = String(now.getDate()).padStart(2, '0');
+      
+      var daysOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
+      var dayOfWeek = daysOfWeek[now.getDay()];
+
+      var hour = String(now.getHours()).padStart(2, '0');
+      var min = String(now.getMinutes()).padStart(2, '0');
+      var sec = String(now.getSeconds()).padStart(2, '0');
+
+      var dateStr = year + "." + mon + "." + day + " (" + dayOfWeek + ")";
+      var timeStr = hour + ":" + min + ":" + sec;
+
+      document.getElementById("view_date").innerHTML = dateStr;
+      document.getElementById("view_time").innerHTML = timeStr;
+    }
+
+    setInterval(updateClock, 1000);
+    window.onload = updateClock;
+
+    // --- ポモドーロタイマーの処理 ---
+    let WORK_TIME = 25 * 60; // 25分
+    let BREAK_TIME = 5 * 60;  // 5分
+    let timeLeft = WORK_TIME;
+    let timerId = null;
+    let isWorking = true; // true: 作業中, false: 休憩中
+
+    function formatTime(seconds) {
+      let m = Math.floor(seconds / 60);
+      let s = seconds % 60;
+      return String(m).padStart(2, '0') + ":" + String(s).padStart(2, '0');
+    }
+
+    function updatePomoDisplay() {
+      document.getElementById("pomo_timer").innerHTML = formatTime(timeLeft);
+    }
+
+    function startPomodoro() {
+      if (timerId !== null) return; // すでに動いているときは何もしない
+      
+      document.getElementById("mode_label").innerHTML = isWorking ? "STATUS: WORKING" : "STATUS: BREAKING";
+
+      timerId = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          updatePomoDisplay();
+        } else {
+          // 時間切れになったら作業と休憩を切り替える
+          isWorking = !isWorking;
+          timeLeft = isWorking ? WORK_TIME : BREAK_TIME;
+          document.getElementById("mode_label").innerHTML = isWorking ? "STATUS: WORKING" : "STATUS: BREAKING";
+          alert(isWorking ? "休憩終了！作業を再開します。" : "作業終了！休憩の時間です。");
+          updatePomoDisplay();
+        }
+      }, 1000);
+    }
+
+    function pausePomodoro() {
+      clearInterval(timerId);
+      timerId = null;
+      document.getElementById("mode_label").innerHTML = "STATUS: PAUSED";
+    }
+
+    function resetPomodoro() {
+      clearInterval(timerId);
+      timerId = null;
+      isWorking = true;
+      timeLeft = WORK_TIME;
+      document.getElementById("mode_label").innerHTML = "SYSTEM READY";
+      updatePomoDisplay();
+    }
+  </script>
+</body>
+</html>
