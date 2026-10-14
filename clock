@@ -240,27 +240,28 @@
   <script>
     // --- 時計の処理 ---
     function updateClock() {
-      var now = new Date();
-      var year = now.getFullYear();
-      var mon = String(now.getMonth() + 1).padStart(2, '0');
-      var day = String(now.getDate()).padStart(2, '0');
+      const now = new Date();
+      const year = now.getFullYear();
+      const mon = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
       
-      var daysOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
-      var dayOfWeek = daysOfWeek[now.getDay()];
+      const daysOfWeek = ["日", "月", "火", "水", "木", "金", "土"];
+      const dayOfWeek = daysOfWeek[now.getDay()];
 
-      var hour = String(now.getHours()).padStart(2, '0');
-      var min = String(now.getMinutes()).padStart(2, '0');
-      var sec = String(now.getSeconds()).padStart(2, '0');
+      const hour = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      const sec = String(now.getSeconds()).padStart(2, '0');
 
-      var dateStr = year + "." + mon + "." + day + " (" + dayOfWeek + ")";
-      var timeStr = hour + ":" + min + ":" + sec;
+      const dateStr = year + "." + mon + "." + day + " (" + dayOfWeek + ")";
+      const timeStr = hour + ":" + min + ":" + sec;
 
-      document.getElementById("view_date").innerHTML = dateStr;
-      document.getElementById("view_time").innerHTML = timeStr;
+      const vd = document.getElementById("view_date");
+      const vt = document.getElementById("view_time");
+      if (vd) vd.textContent = dateStr;
+      if (vt) vt.textContent = timeStr;
     }
 
     setInterval(updateClock, 1000);
-    window.onload = updateClock;
 
     // --- ポモドーロタイマーの処理 ---
     let WORK_TIME = 25 * 60; // 25分
@@ -270,19 +271,20 @@
     let isWorking = true; // true: 作業中, false: 休憩中
 
     function formatTime(seconds) {
-      let m = Math.floor(seconds / 60);
-      let s = seconds % 60;
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
       return String(m).padStart(2, '0') + ":" + String(s).padStart(2, '0');
     }
 
     function updatePomoDisplay() {
-      document.getElementById("pomo_timer").innerHTML = formatTime(timeLeft);
+      const el = document.getElementById("pomo_timer");
+      if (el) el.textContent = formatTime(timeLeft);
     }
 
     function startPomodoro() {
       if (timerId !== null) return; // すでに動いているときは何もしない
-      
-      document.getElementById("mode_label").innerHTML = isWorking ? "STATUS: WORKING" : "STATUS: BREAKING";
+      const modeEl = document.getElementById("mode_label");
+      if (modeEl) modeEl.textContent = isWorking ? "STATUS: WORKING" : "STATUS: BREAKING";
 
       timerId = setInterval(() => {
         if (timeLeft > 0) {
@@ -292,25 +294,32 @@
           // 時間切れになったら作業と休憩を切り替える
           isWorking = !isWorking;
           timeLeft = isWorking ? WORK_TIME : BREAK_TIME;
-          document.getElementById("mode_label").innerHTML = isWorking ? "STATUS: WORKING" : "STATUS: BREAKING";
-          alert(isWorking ? "休憩終了！作業を再開します。" : "作業終了！休憩の時間です。");
+          if (modeEl) modeEl.textContent = isWorking ? "STATUS: WORKING" : "STATUS: BREAKING";
+          // alert の代わりに非ブロッキングな neon 通知を使う
+          showNeonNotification(isWorking ? "休憩終了！作業を再開します。" : "作業終了！休憩の時間です。", "FOCUS");
           updatePomoDisplay();
         }
       }, 1000);
     }
 
     function pausePomodoro() {
-      clearInterval(timerId);
-      timerId = null;
-      document.getElementById("mode_label").innerHTML = "STATUS: PAUSED";
+      if (timerId !== null) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+      const modeEl = document.getElementById("mode_label");
+      if (modeEl) modeEl.textContent = "STATUS: PAUSED";
     }
 
     function resetPomodoro() {
-      clearInterval(timerId);
-      timerId = null;
+      if (timerId !== null) {
+        clearInterval(timerId);
+        timerId = null;
+      }
       isWorking = true;
       timeLeft = WORK_TIME;
-      document.getElementById("mode_label").innerHTML = "SYSTEM READY";
+      const modeEl = document.getElementById("mode_label");
+      if (modeEl) modeEl.textContent = "SYSTEM READY";
       updatePomoDisplay();
     }
   </script>
@@ -346,99 +355,53 @@
   </div>
 </div>
 <script>
-  
-/* ===== NEON NOTIFICATION SYSTEM ===== */
+  /* ===== NEON NOTIFICATION SYSTEM (統合版) ===== */
+  function showNeonNotification(message, title = "SYSTEM ALERT") {
+    const alertBox = document.getElementById("neonAlert");
+    const alertTitle = document.getElementById("neonAlertTitle");
+    const alertMessage = document.getElementById("neonAlertMessage");
 
-function showNeonNotification(
-  message,
-  title = "SYSTEM ALERT"
-) {
-  const alertBox = document.getElementById("neonAlert");
-  const alertTitle = document.getElementById("neonAlertTitle");
-  const alertMessage = document.getElementById("neonAlertMessage");
+    if (!alertBox || !alertTitle || !alertMessage) {
+      console.error("Neon notification elements not found.");
+      return;
+    }
 
-  if (!alertBox || !alertTitle || !alertMessage) {
-    console.error("Neon notification elements not found.");
-    return;
-  }
+    alertTitle.textContent = title;
+    alertMessage.textContent = message;
 
-  alertTitle.textContent = title;
-  alertMessage.textContent = message;
-
-  // 再表示時にもアニメーションさせる
-  alertBox.hidden = true;
-  void alertBox.offsetWidth;
-  alertBox.hidden = false;
-}
-
-function closeNeonNotification() {
-  const alertBox = document.getElementById("neonAlert");
-
-  if (alertBox) {
+    // 再表示時にもアニメーションさせる
     alertBox.hidden = true;
-  }
-}
+    void alertBox.offsetWidth; // reflow to restart animation
+    alertBox.hidden = false;
 
-// 閉じるボタンを登録
-document
-  .getElementById("neonAlertClose")
-  .addEventListener("click", closeNeonNotification);
-
-// 動作テスト用
-// ブラウザの開発者コンソールから実行できます。
-// showNeonNotification("テスト通知です！", "SYSTEM READY");
-
-</script>
-<script>
-  
-/* ===== NEON NOTIFICATION SYSTEM ===== */
-
-function showNeonNotification(
-  message,
-  title = "SYSTEM ALERT"
-) {
-  const alertBox = document.getElementById("neonAlert");
-  const alertTitle = document.getElementById("neonAlertTitle");
-  const alertMessage = document.getElementById("neonAlertMessage");
-
-  if (!alertBox || !alertTitle || !alertMessage) {
-    console.error("Neon notification elements not found.");
-    return;
+    // 自動で閉じるタイマー（再表示時は前のタイマーをクリア）
+    if (alertBox._closeTimeout) clearTimeout(alertBox._closeTimeout);
+    alertBox._closeTimeout = setTimeout(() => { alertBox.hidden = true; }, 5000);
   }
 
-  alertTitle.textContent = title;
-  alertMessage.textContent = message;
+  function closeNeonNotification() {
+    const alertBox = document.getElementById("neonAlert");
 
-  // 再表示時にもアニメーションさせる
-  alertBox.hidden = true;
-  void alertBox.offsetWidth;
-  alertBox.hidden = false;
-}
-
-function closeNeonNotification() {
-  const alertBox = document.getElementById("neonAlert");
-
-  if (alertBox) {
-    alertBox.hidden = true;
+    if (alertBox) {
+      alertBox.hidden = true;
+      if (alertBox._closeTimeout) {
+        clearTimeout(alertBox._closeTimeout);
+        alertBox._closeTimeout = null;
+      }
+    }
   }
-}
 
-// 閉じるボタンを登録
-document
-  .getElementById("neonAlertClose")
-  .addEventListener("click", closeNeonNotification);
+  // 閉じるボタンを登録（存在チェック付き）
+  const neonCloseBtn = document.getElementById("neonAlertClose");
+  if (neonCloseBtn) {
+    neonCloseBtn.addEventListener("click", closeNeonNotification);
+  }
 
-// 動作テスト用
-// ブラウザの開発者コンソールから実行できます。
-// showNeonNotification("テスト通知です！", "SYSTEM READY");
-showNeonNotification(
-  "25分間の集中作業が終了しました。休憩しましょう。",
-  "FOCUS COMPLETE"
-);
-showNeonNotification(
-  "集中作業が終了しました。休憩しましょう。",
-  "FOCUS COMPLETE"
-);
+  // ページロード時に初期表示を同期
+  window.addEventListener('load', () => {
+    updateClock();
+    updatePomoDisplay();
+  });
 </script>
 </body>
 </html>
